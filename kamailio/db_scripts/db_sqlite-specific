@@ -1,0 +1,25 @@
+#!/bin/sh
+# Schema for the stock db_sqlite module. Same tables, views and triggers as
+# db_kazoo (which is SQLite based); only the setup step differs: it uses the
+# sqlite3 command line tool instead of KazooDB.
+#
+#   DB_ENGINE=db_sqlite DB_KAZOO_LOCATION=/var/lib/kamailio ./create-kazoodb-sql.sh
+
+. $(dirname $0)/db_kazoo-specific --source-only
+
+sql_setup() {
+ DB_KAZOO_LOCATION=${2:-${DB_KAZOO_LOCATION:-/etc/kazoo/kamailio/db}}
+ mkdir -p ${DB_KAZOO_LOCATION}
+ sqlite3 ${DB_KAZOO_LOCATION}/kazoo.db < $1 > /dev/null
+}
+
+# db_kazoo creates tmp_probe at startup through KazooDB (db_extra_check.sql);
+# the presence reset queries need it, so create it with the schema
+sql_footer() {
+cat << EOS
+CREATE TABLE tmp_probe AS SELECT DISTINCT a.event, a.presentity_uri, cast(2 as integer) action
+    FROM presentities a INNER JOIN active_watchers b
+    ON a.presentity_uri = b.presentity_uri AND a.event = b.event
+    WHERE state IN('early', 'confirmed', 'onthephone', 'busy');
+EOS
+}

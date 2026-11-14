@@ -7,7 +7,8 @@ RESULTED_SQL=${RESULTED_SQL:-/tmp/kamailio_initdb.sql}
 . $(dirname $0)/$DB_ENGINE-specific --source-only
 
 sql_filelist() {
-  echo `ls -A1 ${KAMAILIO_SHARE_DIR}/${DB_ENGINE}/*.sql | grep -v standard | tr '\n' '\0' | xargs -0 -n 1 basename | sort`
+  # ims_* schemas redefine dialog/usrloc tables and are not used by Kazoo
+  echo `ls -A1 ${KAMAILIO_SHARE_DIR}/${DB_ENGINE}/*.sql | grep -v standard | grep -v '/ims_' | tr '\n' '\0' | xargs -0 -n 1 basename | sort`
 }
 
 sql_all_header() {
